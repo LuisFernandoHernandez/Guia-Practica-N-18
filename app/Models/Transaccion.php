@@ -16,6 +16,8 @@ class Transaccion extends Model
     protected $fillable = [
         'comercio_id',
         'monto',
+        'metodo',
+        'comision',
         'cliente_nombre',
         'estado',
     ];

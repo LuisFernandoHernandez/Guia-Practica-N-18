@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('transacciones', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('comercio_id')
-            ->constrained('comercios')
-            ->cascadeOnDelete();
-        $table->decimal('monto', 8, 2);
-        $table->string('cliente_nombre');
-        $table->enum('estado', ['Iniciada', 'Completada', 'Fallida'])
-            ->default('Iniciada');
-        $table->timestamps();
-    });
+        Schema::create('transacciones', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('comercio_id')
+                ->constrained('comercios')
+                ->cascadeOnDelete();
+            $table->decimal('monto', 8, 2);
+            $table->string('metodo')->default('tarjeta');
+            $table->decimal('comision', 8, 2)->default(0);
+            $table->string('cliente_nombre');
+            $table->enum('estado', ['Iniciada', 'Completada', 'Fallida'])
+                ->default('Iniciada');
+            $table->timestamps();
+        });
     }
 
     /**
@@ -29,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transaccions');
+        Schema::dropIfExists('transacciones');
     }
 };

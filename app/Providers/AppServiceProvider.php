@@ -6,12 +6,12 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
+   public function register(): void
     {
-        //
+        $this->app->singleton(\App\Services\CalculadoraComision::class, fn () => new \App\Services\CalculadoraComision([
+            new \App\Services\Comisiones\ComisionTarjeta(),
+            new \App\Services\Comisiones\ComisionTransferencia(),
+        ]));
     }
 
     /**

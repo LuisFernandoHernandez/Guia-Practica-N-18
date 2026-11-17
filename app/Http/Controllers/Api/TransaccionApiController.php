@@ -4,30 +4,38 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GuardarTransaccionRequest;
+use App\Http\Requests\UpdateTransaccionRequest;
 use App\Http\Resources\TransaccionResource;
 use App\Models\Transaccion;
+use App\Services\TransaccionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+
 class TransaccionApiController extends Controller
 {
+    // Inyectamos el servicio en el constructor para mantener el controlador delgado
+    public function __construct(private TransaccionService $servicio) {}
+
     public function index(Request $request)
-{
-    $datos = $request->validate([
-        'estado' => ['nullable', Rule::in(['Iniciada', 'Completada', 'Fallida'])],
-    ]);
+    {
+        $datos = $request->validate([
+            'estado' => ['nullable', Rule::in(['Iniciada', 'Completada', 'Fallida'])],
+        ]);
 
-    $estado = $datos['estado'] ?? null;
+        $estado = $datos['estado'] ?? null;
 
-    $transacciones = Transaccion::whereHas('comercio', fn ($q) =>
-        $q->where('user_id', $request->user()->id)
-    )
-    ->when($estado, fn ($q, $e) => $q->where('estado', $e))
-    ->latest()
-    ->get();
+        $transacciones = Transaccion::whereHas(
+            'comercio',
+            fn($q) =>
+            $q->where('user_id', $request->user()->id)
+        )
+            ->when($estado, fn($q, $e) => $q->where('estado', $e))
+            ->latest()
+            ->get();
 
-    return TransaccionResource::collection($transacciones);
-}
+        return TransaccionResource::collection($transacciones);
+    }
 
     public function filtrar(Request $request)
     {
@@ -44,15 +52,17 @@ class TransaccionApiController extends Controller
             ],
         ]);
 
-        $q = Transaccion::whereHas('comercio', fn ($q) =>
+        $q = Transaccion::whereHas(
+            'comercio',
+            fn($q) =>
             $q->where('user_id', $request->user()->id)
         );
 
-        $q->when($datos['estado'] ?? null, fn ($q, $e) => $q->where('estado', $e))
-          ->when($datos['desde'] ?? null, fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
-          ->when($datos['hasta'] ?? null, fn ($q, $h) => $q->whereDate('created_at', '<=', $h))
-          ->when($datos['monto_min'] ?? null, fn ($q, $m) => $q->where('monto', '>=', $m))
-          ->when($datos['monto_max'] ?? null, fn ($q, $m) => $q->where('monto', '<=', $m));
+        $q->when($datos['estado'] ?? null, fn($q, $e) => $q->where('estado', $e))
+            ->when($datos['desde'] ?? null, fn($q, $d) => $q->whereDate('created_at', '>=', $d))
+            ->when($datos['hasta'] ?? null, fn($q, $h) => $q->whereDate('created_at', '<=', $h))
+            ->when($datos['monto_min'] ?? null, fn($q, $m) => $q->where('monto', '>=', $m))
+            ->when($datos['monto_max'] ?? null, fn($q, $m) => $q->where('monto', '<=', $m));
 
         return TransaccionResource::collection($q->latest()->get());
     }
@@ -64,21 +74,10 @@ class TransaccionApiController extends Controller
 
     public function store(GuardarTransaccionRequest $request)
     {
-        // creación y el evento en una transacción de base de datos
-        $transaccion = DB::transaction(function () use ($request) {
-            // 1. Crear la transacción con los datos validados
-            $t = Transaccion::create($request->validated());
+        // El controlador ya no maneja lógica de negocio ni transacciones de BD:
+        // delega toda la responsabilidad al servicio de manera limpia.
+        $transaccion = $this->servicio->registrar($request->user(), $request->validated());
 
-            // 2. Registrar el evento inicial de creación
-            $t->eventos()->create([
-                'tipo_evento' => 'creacion',
-                'detalle' => 'Transacción iniciada',
-            ]);
-
-            return $t;
-        });
-
-        // 3. Devolver la respuesta en formato JSON con código 201
         return (new TransaccionResource($transaccion))
             ->response()
             ->setStatusCode(201);
@@ -91,10 +90,15 @@ class TransaccionApiController extends Controller
         return new TransaccionResource($transaccion);
     }
 
-    public function update(Request $request, Transaccion $transaccion)
+    public function update(UpdateTransaccionRequest $request, Transaccion $transaccion)
     {
-        $this->autorizar($transaccion);
-        //
+        $transaccionActualizada = $this->servicio->cambiarEstado(
+            $request->user(),
+            $transaccion,
+            $request->validated('estado')
+        );
+
+        return new TransaccionResource($transaccionActualizada);
     }
 
     public function destroy(Transaccion $transaccion)

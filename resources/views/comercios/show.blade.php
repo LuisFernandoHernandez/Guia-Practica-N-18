@@ -29,6 +29,11 @@
         <div class="card">
             <strong>${{ number_format($transaccion->monto, 2) }}</strong>
             — {{ $transaccion->cliente_nombre }}
+
+            <!-- NUEVO: Método y Comisión calculada -->
+            <span class="text-muted ms-2">({{ ucfirst($transaccion->metodo) }} — Com.:
+                ${{ number_format($transaccion->comision, 2) }})</span>
+
             <x-badge-estado :estado="$transaccion->estado" />
             <a href="{{ route('transacciones.edit', $transaccion) }}">Editar</a>
 
@@ -46,7 +51,6 @@
                     @method('PATCH')
                     <button type="submit">Marcar Fallida</button>
                 </form>
-
             @endif
             <form action="{{ route('transacciones.destroy', $transaccion) }}" method="POST"
                 onsubmit="return confirm('¿Eliminar esta transacción? Esta acción no se puede deshacer.')">

@@ -11,39 +11,45 @@ class ComercioSeeder extends Seeder
     {
         $cafeAmanecer = Comercio::create([
             'nombre_comercio' => 'Café Amanecer',
-            'rubro' => 'Restaurante',
-            'telefono' => '2222-1234',
+            'rubro'           => 'Restaurante',
+            'telefono'        => '2222-1234',
         ]);
 
         $cafeAmanecer->transacciones()->createMany([
             [
-                'monto' => 45.00,
+                'monto'          => 45.00,
+                'metodo'         => 'tarjeta',
+                'comision'       => 1.58,
                 'cliente_nombre' => 'María López',
-                'estado' => 'Completada',
+                'estado'         => 'Completada',
             ],
             [
-                'monto' => 12.50,
+                'monto'          => 12.50,
+                'metodo'         => 'transferencia',
+                'comision'       => 1.50,
                 'cliente_nombre' => 'Juan Pérez',
-                'estado' => 'Iniciada',
+                'estado'         => 'Iniciada',
             ],
         ]);
 
         Comercio::create([
             'nombre_comercio' => 'Ferretería El Tornillo',
-            'rubro' => 'Ferretería',
-            'telefono' => '2222-5678',
+            'rubro'           => 'Ferretería',
+            'telefono'        => '2222-5678',
         ]);
 
         $pupuseria = Comercio::create([
             'nombre_comercio' => 'Pupusería Doña Marta',
-            'rubro' => 'Restaurante',
-            'telefono' => '2222-9012',
+            'rubro'           => 'Restaurante',
+            'telefono'        => '2222-9012',
         ]);
 
         $pupuseria->transacciones()->create([
-            'monto' => 8.00,
+            'monto'          => 8.00,
+            'metodo'         => 'transferencia',
+            'comision'       => 1.50,
             'cliente_nombre' => 'Carlos Ramírez',
-            'estado' => 'Fallida',
+            'estado'         => 'Fallida',
         ]);
     }
 }
